@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EASYHUB AUTOJOINER — Steal a Brainrot</title>
+<style>
+  :root {
+    --bg:       #0d0d14;
+    --card:     #13131f;
+    --border:   #1e1e30;
+    --accent:   #7c5cfc;
+    --accent2:  #5b8dee;
+    --green:    #3ddc84;
+    --yellow:   #f5c542;
+    --orange:   #f58b42;
+    --red:      #f54242;
+    --text:     #e8e8f0;
+    --subtext:  #7878a0;
+    --full:     #1e1e2a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+  .header p {
+    color: var(--subtext);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  /* ── SEARCH BAR ── */
+  .search-row {
+    display: flex;
+    gap: 10px;
+    max-width: 760px;
+    margin: 0 auto 20px;
+    flex-wrap: wrap;
+  }
+  .search-row input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-row input:focus {
+    border-color: var(--accent);
+  }
+  .search-row input::placeholder { color: var(--subtext); }
+
+  .btn {
+    padding: 12px 22px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:hover  { opacity: 0.85; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+  .btn-gray    { background: var(--border); color: var(--subtext); }
+  .btn-green   { background: var(--green); color: #000; }
+  .btn-full    { background: var(--full); color: var(--subtext); cursor: not-allowed; border: 1px solid var(--border); }
+
+  /* ── FILTER ROW ── */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    max-width: 760px;
+    margin: 0 auto 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-row label { color: var(--subtext); font-size: 0.82rem; }
+  .filter-row select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 7px 12px;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .toggle-full {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--subtext);
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .toggle-full input { cursor: pointer; accent-color: var(--accent); }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    max-width: 760px;
+    margin: 0 auto 16px;
+    padding: 10px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.83rem;
+    color: var(--subtext);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .status-bar .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-gray   { background: var(--subtext); }
+
+  /* ── SPINNER ── */
+  .spinner-wrap {
+    text-align: center;
+    padding: 60px 0;
+    display: none;
+  }
+  .spinner {
+    width: 42px; height: 42px;
+    border: 4px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SERVER GRID ── */
+  .server-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* ── SERVER CARD ── */
+  .server-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .server-card:not(.full-card):hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .server-card.full-card {
+    opacity: 0.45;
+  }
+  .server-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 14px 0 0 14px;
+  }
+  .server-card.spots-many::before  { background: var(--green); }
+  .server-card.spots-few::before   { background: var(--yellow); }
+  .server-card.spots-one::before   { background: var(--orange); }
+  .server-card.full-card::before   { background: var(--red); }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .card-left { flex: 1; min-width: 0; }
+
+  .server-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .badge-green  { background: rgba(61,220,132,0.15); color: var(--green); border: 1px solid rgba(61,220,132,0.3); }
+  .badge-yellow { background: rgba(245,197,66,0.15);  color: var(--yellow); border: 1px solid rgba(245,197,66,0.3); }
+  .badge-orange { background: rgba(245,139,66,0.15);  color: var(--orange); border: 1px solid rgba(245,139,66,0.3); }
+  .badge-red    { background: rgba(245,66,66,0.15);   color: var(--red);    border: 1px solid rgba(245,66,66,0.3); }
+
+  /* ── PLAYER BAR ── */
+  .player-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .player-count {
+    font-size: 0.88rem;
+    color: var(--subtext);
+  }
+  .player-count span { color: var(--text); font-weight: 600; }
+
+  .bar-bg {
+    flex: 1;
+    min-width: 80px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.3s;
+  }
+
+  .ping-tag {
+    font-size: 0.75rem;
+    color: var(--subtext);
+    white-space: nowrap;
+  }
+  .ping-tag span { color: var(--green); }
+
+  /* ── BRAINROTS ── */
+  .brainrot-section {
+    margin-bottom: 12px;
+  }
+  .brainrot-label {
+    font-size: 0.72rem;
+    color: var(--subtext);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .brainrot-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .chip {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(124,92,252,0.12);
+    border: 1px solid rgba(124,92,252,0.25);
+    color: #b8a4ff;
+    white-space: nowrap;
+  }
+  .chip.highlight {
+    background: rgba(124,92,252,0.3);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 700;
+  }
+  .chip.no-brainrot {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--subtext);
+    font-style: italic;
+  }
+
+  /* ── CARD BOTTOM ── */
+  .card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .server-id {
+    font-size: 0.7rem;
+    color: var(--subtext);
+    font-family: monospace;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--subtext);
+    display: none;
+  }
+  .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+
+  /* ── NOTICE ── */
+  .notice {
+    max-width: 760px;
+    margin: 0 auto 20px;
+    padding: 12px 16px;
+    background: rgba(124,92,252,0.08);
+    border: 1px solid rgba(124,92,252,0.25);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: #b8a4ff;
+    line-height: 1.5;
+  }
+  .notice strong { color: var(--accent); }
+
+  /* ── CORS WARNING ── */
+  .cors-warning {
+    max-width: 760px;
+    margin: 0 auto 20px;
+    padding: 14px 16px;
+    background: rgba(245,66,66,0.08);
+    border: 1px solid rgba(245,66,66,0.25);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: #ff9999;
+    line-height: 1.6;
+    display: none;
+  }
+  .cors-warning strong { color: var(--red); }
+  .cors-warning code {
+    background: rgba(0,0,0,0.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ EASYHUB AUTOJOINER</h1>
+  <p>Steal a Brainrot — Browser Server Browser • Zero in-game detection</p>
+</div>
+
+<div class="notice">
+  <strong>How this works:</strong> This page scans servers from your <strong>browser</strong> — completely outside Roblox. Zero HTTP calls happen inside the game. When you click Join, it opens Roblox via <code>roblox://</code> deep link exactly like clicking Join in the Roblox website. Completely undetected.
+</div>
+
+<div class="cors-warning" id="corsWarning">
+  <strong>⚠️ CORS Blocked</strong> — Your browser is blocking API calls to Roblox.<br>
+  Fix: Install the <strong>CORS Unblock</strong> extension for Chrome/Firefox, enable it, then refresh this page.<br>
+  Or open this file in <strong>Firefox</strong> with <code>privacy.file_unique_origin</code> set to <code>false</code> in about:config.
+</div>
+
+<div class="search-row">
+  <input type="text" id="searchInput" placeholder="🔍  Search brainrot name (e.g. Tralalero, Bombardino, Tung Tung...)">
+  <button class="btn btn-primary" onclick="startScan()">Scan Servers</button>
+  <button class="btn btn-gray" onclick="clearResults()">Clear</button>
+</div>
+
+<div class="filter-row">
+  <label>Sort by:</label>
+  <select id="sortSelect" onchange="renderServers()">
+    <option value="spots">Most Open Spots</option>
+    <option value="players">Most Players</option>
+    <option value="ping">Lowest Ping</option>
+  </select>
+  <label class="toggle-full">
+    <input type="checkbox" id="showFull" onchange="renderServers()">
+    Show full servers
+  </label>
+</div>
+
+<div class="status-bar" id="statusBar">
+  <div><span class="dot dot-gray" id="statusDot"></span><span id="statusText">Ready — press Scan Servers to begin</span></div>
+  <div id="statusRight" style="color:var(--subtext);font-size:0.78rem;"></div>
+</div>
+
+<div class="spinner-wrap" id="spinner">
+  <div class="spinner"></div>
+  <div style="color:var(--subtext);font-size:0.88rem;">Scanning servers...</div>
+</div>
+
+<div class="empty" id="emptyState">
+  <div class="icon">🔎</div>
+  <div>No servers found matching your search.<br>Try a different brainrot name or clear the search.</div>
+</div>
+
+<div class="server-grid" id="serverGrid"></div>
+
+<script>
+// =====================================================
+//  CONFIG
+// =====================================================
+const PLACE_ID = 108825876488386;  // Steal a Brainrot
+
+// Known brainrot names to detect in player usernames/displaynames
+// Add more here as new brainrots are added to the game
+const BRAINROT_NAMES = [
+  "Tralalero Tralala","Bombardino Crocodilo","Tung Tung Tung Sahur",
+  "Cappuccino Assassino","Burbaloni Lulilolli","Brr Brr Patapim",
+  "Frigo Camelo","Glorbo Fruttodrillo","La Vaca Saturno Saturnita",
+  "Bombombini Gusini","Lirili Larila","Mediocre Tutorial Droid",
+  "Trippi Troppi","Bobritto Bandito","Crocodilo","Tralalero",
+  "Bombardino","Sahur","Cappuccino","Burbaloni","Patapim",
+  "Glorbo","Fruttodrillo","Saturno","Bombombini","Lirili",
+  "Bobritto","Bandito","Ballerina Cappuccina","Cacto Loco",
+  "Chimpanzini Bananini","Orangutini Bananini","Lirilì Larilà",
+  "Trulimero Trulicina","Quandale Dingle","Ohio","Rizz",
+  "Gyatt","Skibidi","Sigma","Mewing","Grimace","Fanum",
+];
+
+// =====================================================
+//  STATE
+// =====================================================
+let allServers  = [];   // raw scan results
+let scanning    = false;
+let scanPage    = 0;
+let nextCursor  = "";
+let openCount   = 0;
+let fullCount   = 0;
+let proxyIdx    = 0;
+
+const PROXIES = [
+  "https://corsproxy.io/?",           // wraps URL
+  "https://api.allorigins.win/raw?url=",
+];
+
+// =====================================================
+//  HELPERS
+// =====================================================
+function setStatus(text, dotClass, right) {
+  document.getElementById("statusText").textContent = text;
+  const dot = document.getElementById("statusDot");
+  dot.className = "dot " + (dotClass || "dot-gray");
+  if (right !== undefined)
+    document.getElementById("statusRight").textContent = right;
+}
+
+function showSpinner(on) {
+  document.getElementById("spinner").style.display = on ? "block" : "none";
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function jitter(mn, mx) {
+  return sleep(mn + Math.random() * (mx - mn));
+}
+
+// =====================================================
+//  PROXY FETCH
+//  Wraps Roblox API calls through a CORS proxy
+//  so requests come from the browser safely
+// =====================================================
+async function proxyFetch(robloxUrl) {
+  for (let attempt = 0; attempt < PROXIES.length; attempt++) {
+    const proxy = PROXIES[proxyIdx % PROXIES.length];
+    let url;
+
+    if (proxy.includes("corsproxy.io")) {
+      url = proxy + encodeURIComponent(robloxUrl);
+    } else {
+      url = proxy + encodeURIComponent(robloxUrl);
+    }
+
+    try {
+      const res = await fetch(url, {
+        headers: { "Accept": "application/json" }
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      proxyIdx++;
+      await sleep(1200 + Math.random() * 800);
+    }
+  }
+  return null;
+}
+
+// =====================================================
+//  FETCH ONE PAGE OF SERVERS
+// =====================================================
+async function fetchPage(cursor) {
+  let url = `https://games.roblox.com/v1/games/${PLACE_ID}/servers/Public?sortOrder=Asc&limit=25`;
+  if (cursor) url += "&cursor=" + encodeURIComponent(cursor);
+
+  const data = await proxyFetch(url);
+  if (!data || !data.data) return { servers: [], next: "" };
+  return {
+    servers: data.data,
+    next:    data.nextPageCursor || ""
+  };
+}
+
+// =====================================================
+//  GET PLAYER NAMES IN SERVER
+//  Uses the thumbnail batch API to decode playerTokens
+//  into display names — this is how we show brainrots
+// =====================================================
+async function resolvePlayerNames(playerTokens) {
+  if (!playerTokens || playerTokens.length === 0) return [];
+
+  const requests = playerTokens.slice(0, 15).map((token, i) => ({
+    requestId: `${i}:${token}:AvatarHeadshot:48x48:png:regular`,
+    type:      "AvatarHeadshot",
+    targetId:  0,
+    token:     token,
+    format:    "png",
+    size:      "48x48"
+  }));
+
+  const url = "https://thumbnails.roblox.com/v1/batch";
+  const data = await proxyFetch(url + "?requests=" + encodeURIComponent(JSON.stringify(requests)));
+
+  if (!data || !data.data) return [];
+
+  // Extract userIds from resolved thumbnails
+  const userIds = data.data
+    .filter(d => d.targetId && d.targetId > 0)
+    .map(d => d.targetId);
+
+  if (userIds.length === 0) return [];
+
+  // Get display names for those userIds
+  const namesUrl = `https://users.roblox.com/v1/users?userIds=${userIds.join(",")}&excludeBannedUsers=true`;
+  const namesData = await proxyFetch(namesUrl);
+
+  if (!namesData || !namesData.data) return [];
+  return namesData.data.map(u => ({
+    id:          u.id,
+    name:        u.name,
+    displayName: u.displayName
+  }));
+}
+
+// =====================================================
+//  DETECT BRAINROTS FROM PLAYER LIST
+// =====================================================
+function detectBrainrots(players) {
+  const found = new Set();
+  for (const p of players) {
+    const combined = ((p.name || "") + " " + (p.displayName || "")).toLowerCase();
+    for (const br of BRAINROT_NAMES) {
+      if (combined.includes(br.toLowerCase())) {
+        found.add(br);
+      }
+    }
+  }
+  return Array.from(found);
+}
+
+// =====================================================
+//  SCAN
+// =====================================================
+async function startScan() {
+  if (scanning) return;
+  scanning   = true;
+  allServers = [];
+  openCount  = 0;
+  fullCount  = 0;
+  nextCursor = "";
+  scanPage   = 0;
+
+  document.getElementById("serverGrid").innerHTML = "";
+  document.getElementById("emptyState").style.display = "none";
+  document.getElementById("corsWarning").style.display = "none";
+  showSpinner(true);
+  setStatus("Scanning servers...", "dot-yellow", "");
+
+  try {
+    const MAX_PAGES = 4; // 100 servers max
+
+    for (let page = 0; page < MAX_PAGES && scanning; page++) {
+      setStatus(`Scanning page ${page + 1} of ${MAX_PAGES}...`, "dot-yellow",
+        `${openCount} open  •  ${fullCount} full`);
+
+      const { servers, next } = await fetchPage(nextCursor);
+      if (!servers || servers.length === 0) break;
+
+      for (const s of servers) {
+        if (!s.id) continue;
+
+        const playing    = s.playing    || 0;
+        const maxPlayers = s.maxPlayers || 0;
+        const isFull     = maxPlayers > 0 && playing >= maxPlayers;
+
+        if (isFull) {
+          fullCount++;
+        } else {
+          openCount++;
+        }
+
+        // Resolve player names (only for open servers to save requests)
+        let players  = [];
+        let brainrots = [];
+
+        if (!isFull && s.playerTokens && s.playerTokens.length > 0) {
+          await jitter(800, 1800); // human-like delay between token calls
+          players   = await resolvePlayerNames(s.playerTokens);
+          brainrots = detectBrainrots(players);
+        }
+
+        allServers.push({
+          jobId:      s.id,
+          playing,
+          maxPlayers,
+          ping:       s.ping || 0,
+          spots:      Math.max(0, maxPlayers - playing),
+          isFull,
+          players,
+          brainrots,
+        });
+
+        // Re-render incrementally so user sees results as they come in
+        renderServers();
+      }
+
+      if (!next) break;
+      nextCursor = next;
+
+      // Polite pause between pages
+      await jitter(2500, 4500);
+    }
+  } catch (e) {
+    // Check if CORS error
+    if (e.message && (e.message.includes("fetch") || e.message.includes("CORS"))) {
+      document.getElementById("corsWarning").style.display = "block";
+    }
+    setStatus("Error during scan: " + e.message, "dot-gray");
+  }
+
+  scanning = false;
+  showSpinner(false);
+
+  if (allServers.length === 0) {
+    document.getElementById("emptyState").style.display = "block";
+    setStatus("No servers found. Check your internet or try again.", "dot-gray");
+  } else {
+    setStatus(
+      `Scan complete ✅`,
+      "dot-green",
+      `${openCount} open  •  ${fullCount} full  •  ${allServers.length} total`
+    );
+  }
+}
+
+function clearResults() {
+  scanning   = false;
+  allServers = [];
+  document.getElementById("serverGrid").innerHTML = "";
+  document.getElementById("emptyState").style.display = "none";
+  setStatus("Cleared — press Scan Servers to begin", "dot-gray", "");
+  showSpinner(false);
+}
+
+// =====================================================
+//  RENDER SERVER CARDS
+// =====================================================
+function renderServers() {
+  const query     = document.getElementById("searchInput").value.trim().toLowerCase();
+  const sortBy    = document.getElementById("sortSelect").value;
+  const showFull  = document.getElementById("showFull").checked;
+  const grid      = document.getElementById("serverGrid");
+
+  // Filter
+  let filtered = allServers.filter(s => {
+    if (!showFull && s.isFull) return false;
+    if (!query) return true;
+    // Match if any brainrot name contains query OR player name contains query
+    const brainrotMatch = s.brainrots.some(b => b.toLowerCase().includes(query));
+    const playerMatch   = s.players.some(p =>
+      (p.name || "").toLowerCase().includes(query) ||
+      (p.displayName || "").toLowerCase().includes(query)
+    );
+    return brainrotMatch || playerMatch;
+  });
+
+  // Sort
+  if (sortBy === "spots") {
+    filtered.sort((a, b) => b.spots - a.spots);
+  } else if (sortBy === "players") {
+    filtered.sort((a, b) => b.playing - a.playing);
+  } else if (sortBy === "ping") {
+    filtered.sort((a, b) => a.ping - b.ping);
+  }
+
+  if (filtered.length === 0 && allServers.length > 0) {
+    document.getElementById("emptyState").style.display = "block";
+  } else {
+    document.getElementById("emptyState").style.display = "none";
+  }
+
+  grid.innerHTML = filtered.map((s, i) => buildCard(s, i + 1, query)).join("");
+}
+
+// =====================================================
+//  BUILD CARD HTML
+// =====================================================
+function buildCard(s, idx, query) {
+  const pct    = s.maxPlayers > 0 ? s.playing / s.maxPlayers : 0;
+  const pctPx  = Math.round(pct * 100);
+
+  // Color class
+  let spotsClass, badgeClass, badgeText, barColor;
+  if (s.isFull) {
+    spotsClass = "full-card"; badgeClass = "badge-red"; badgeText = "FULL";
+    barColor = "var(--red)";
+  } else if (s.spots >= 5) {
+    spotsClass = "spots-many"; badgeClass = "badge-green"; badgeText = s.spots + " OPEN";
+    barColor = "var(--green)";
+  } else if (s.spots >= 2) {
+    spotsClass = "spots-few"; badgeClass = "badge-yellow"; badgeText = s.spots + " OPEN";
+    barColor = "var(--yellow)";
+  } else {
+    spotsClass = "spots-one"; badgeClass = "badge-orange"; badgeText = "1 SPOT";
+    barColor = "var(--orange)";
+  }
+
+  // Ping color
+  let pingColor = s.ping < 80 ? "var(--green)" : s.ping < 150 ? "var(--yellow)" : "var(--orange)";
+
+  // Brainrot chips
+  let chipsHtml = "";
+  if (s.brainrots.length > 0) {
+    chipsHtml = s.brainrots.map(b => {
+      const isMatch = query && b.toLowerCase().includes(query);
+      return `<span class="chip${isMatch ? " highlight" : ""}">${b}</span>`;
+    }).join("");
+  } else if (s.players.length > 0) {
+    // Show player names as chips if no known brainrots detected
+    chipsHtml = s.players.slice(0, 8).map(p =>
+      `<span class="chip">${escHtml(p.displayName || p.name)}</span>`
+    ).join("");
+    if (s.players.length > 8)
+      chipsHtml += `<span class="chip no-brainrot">+${s.players.length - 8} more</span>`;
+  } else {
+    chipsHtml = `<span class="chip no-brainrot">Loading players...</span>`;
+  }
+
+  // Join button
+  const joinBtn = s.isFull
+    ? `<button class="btn btn-full" disabled>🔒 Full</button>`
+    : `<button class="btn btn-green" onclick="joinServer('${s.jobId}', ${idx})">🚀 Join</button>`;
+
+  return `
+  <div class="server-card ${spotsClass}">
+    <div class="card-top">
+      <div class="card-left">
+        <div class="server-title">
+          Server #${idx}
+          <span class="badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="player-info">
+          <div class="player-count">
+            <span>${s.playing}</span>/${s.maxPlayers} players
+          </div>
+          <div class="bar-bg">
+            <div class="bar-fill" style="width:${pctPx}%;background:${barColor};"></div>
+          </div>
+          <div class="ping-tag">📡 <span style="color:${pingColor}">${s.ping}ms</span></div>
+        </div>
+        <div class="brainrot-section">
+          <div class="brainrot-label">Brainrots in server</div>
+          <div class="brainrot-chips">${chipsHtml}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-bottom">
+      <div class="server-id">ID: ${s.jobId.substring(0, 20)}...</div>
+      ${joinBtn}
+    </div>
+  </div>`;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// =====================================================
+//  JOIN SERVER
+//  Uses roblox:// deep link — identical to clicking
+//  Join on the Roblox website. Completely undetected.
+// =====================================================
+function joinServer(jobId, idx) {
+  const url = `roblox://experiences/start?placeId=${PLACE_ID}&gameInstanceId=${jobId}`;
+  window.location.href = url;
+
+  // Fallback — also try the web join link
+  setTimeout(() => {
+    const webUrl = `https://www.roblox.com/games/start?placeId=${PLACE_ID}&gameInstanceId=${jobId}`;
+    // Open in same tab as fallback
+  }, 2000);
+}
+
+// =====================================================
+//  LIVE SEARCH — re-render on type
+// =====================================================
+document.getElementById("searchInput").addEventListener("input", () => {
+  renderServers();
+});
+</script>
+
+</body>
+</html>
